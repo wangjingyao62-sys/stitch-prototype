@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Doc to UI Generator · 可交互原型（P-01 ~ P-70）</title>
+<style>
+  :root{
+    --blue:#1F5EFF; --bg:#F5F7FA; --ink:#1A1D24; --sub:#5A6273; --mute:#9AA1AE;
+    --line:#EBEEF2; --ok:#12A150; --warn:#B26A00; --bad:#E5484D;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{font-family:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;background:var(--bg);color:var(--ink);display:flex;flex-direction:column;overflow:hidden}
+  header{height:56px;flex:none;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;padding:0 16px;white-space:nowrap;overflow:hidden}
+  .logo{font-weight:700;font-size:15px;white-space:nowrap}
+  .logo em{color:var(--blue);font-style:normal}
+  .stats{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--sub);white-space:nowrap}
+  .bar{width:140px;height:6px;border-radius:99px;background:var(--line);overflow:hidden}
+  .bar i{display:block;height:100%;background:linear-gradient(90deg,#1F5EFF,#1748CC)}
+  .grow{flex:1}
+  input[type=search]{width:210px;height:32px;border:1px solid var(--line);border-radius:8px;padding:0 10px;font-size:13px;outline:none;background:#fff}
+  input[type=search]:focus{border-color:var(--blue)}
+  .btn{height:32px;padding:0 12px;border:1px solid var(--line);background:#fff;border-radius:8px;font-size:13px;cursor:pointer;color:var(--sub)}
+  .btn:hover{border-color:#cfd6e0;color:var(--ink)}
+  .btn.on{background:var(--blue);border-color:var(--blue);color:#fff}
+  a.link{font-size:13px;color:var(--blue);text-decoration:none}
+  main{flex:1;display:flex;min-height:0}
+
+  /* sidebar */
+  aside{width:280px;flex:none;background:#fff;border-right:1px solid var(--line);overflow:auto;padding-bottom:24px}
+  .grp{position:sticky;top:0;background:#fff;padding:12px 14px 6px;font-size:12px;font-weight:700;color:var(--mute);letter-spacing:.04em;z-index:2;border-bottom:1px solid #f3f5f9}
+  .item{display:flex;gap:8px;align-items:flex-start;padding:7px 14px;cursor:pointer;font-size:13px;line-height:1.35;border-left:3px solid transparent}
+  .item:hover{background:#f6f9ff}
+  .item.on{background:#eef3ff;border-left-color:var(--blue);color:var(--blue);font-weight:600}
+  .item .dot{width:7px;height:7px;border-radius:99px;flex:none;margin-top:6px;background:var(--ok)}
+  .item.no .dot{background:#cfd6e0}
+  .item .nm{flex:1}
+  .item .pid{color:var(--mute);font-size:11px;font-variant-numeric:tabular-nums;flex:none;width:38px}
+  .item.on .pid{color:var(--blue)}
+
+  /* stage */
+  .stage{flex:1;display:flex;flex-direction:column;min-width:0}
+  .toolbar{flex:none;height:46px;display:flex;align-items:center;gap:10px;padding:0 14px;background:#fff;border-bottom:1px solid var(--line);font-size:13px;color:var(--sub)}
+  .nav{display:flex;gap:6px}
+  .nav button{width:30px;height:30px;border:1px solid var(--line);background:#fff;border-radius:8px;cursor:pointer;color:var(--sub);font-size:14px}
+  .nav button:hover{color:var(--blue);border-color:var(--blue)}
+  .cur{font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+  .cur small{color:var(--mute);font-weight:400}
+  .canvas{flex:1;position:relative;overflow:auto;display:flex;align-items:center;justify-content:center;padding:18px}
+  .device{position:relative;flex:none;width:375px;height:812px;background:#fff;border-radius:26px;box-shadow:0 10px 34px rgba(20,32,64,.16);overflow:hidden;border:1px solid #e3e7ee;transform-origin:center center}
+  .device iframe{width:375px;height:812px;border:0;display:block;background:#fff}
+  .placeholder{position:absolute;inset:0;display:flex;flex-direction:column;gap:14px;align-items:center;justify-content:center;text-align:center;padding:32px;background:
+     repeating-linear-gradient(45deg,#fbfcfe,#fbfcfe 12px,#f4f6fa 12px,#f4f6fa 24px)}
+  .placeholder .ph-t{font-size:17px;font-weight:700}
+  .placeholder .ph-r{font-size:12px;color:var(--mute);font-family:ui-monospace,Menlo,monospace}
+  .badge{display:inline-block;font-size:11px;padding:3px 8px;border-radius:99px;background:#FDECEC;color:var(--bad);font-weight:600}
+  .placeholder pre{font-size:11px;text-align:left;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px;max-height:300px;overflow:auto;white-space:pre-wrap;width:100%;color:var(--sub);margin:0}
+  .hint{position:absolute;left:16px;bottom:14px;font-size:11px;color:var(--mute);background:rgba(255,255,255,.9);padding:5px 9px;border-radius:8px;border:1px solid var(--line)}
+
+  /* meta panel */
+  .meta{flex:none;background:#fff;border-top:1px solid var(--line);padding:10px 14px;max-height:180px;overflow:auto}
+  .meta .row{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--sub);margin-bottom:6px}
+  .tag{background:#F5F7FA;border:1px solid var(--line);border-radius:6px;padding:2px 7px}
+  .tag b{color:var(--ink);font-weight:600}
+  details{font-size:12px;color:var(--sub)}
+  details summary{cursor:pointer;color:var(--blue)}
+  details pre{white-space:pre-wrap;background:#F8FAFD;border:1px solid var(--line);border-radius:8px;padding:10px;font-size:11.5px;line-height:1.5;max-height:260px;overflow:auto}
+
+  /* grid view */
+  .grid{display:none;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px;padding:16px;overflow:auto;flex:1;align-content:start}
+  body.grid-mode .canvas,body.grid-mode .meta{display:none}
+  body.grid-mode .grid{display:grid}
+  .card{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;cursor:pointer;transition:.15s}
+  .card:hover{border-color:var(--blue);box-shadow:0 6px 18px rgba(31,94,255,.14);transform:translateY(-2px)}
+  .card .pv{height:250px;background:#eef1f6;position:relative;overflow:hidden}
+  .card .pv iframe{width:375px;height:812px;border:0;transform:scale(.66);transform-origin:top left;pointer-events:none}
+  .card .ph{height:250px;display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:center;background:repeating-linear-gradient(45deg,#fbfcfe,#fbfcfe 10px,#f4f6fa 10px,#f4f6fa 20px);color:var(--mute);font-size:12px}
+  .card .cap{padding:8px 10px;font-size:12.5px;border-top:1px solid var(--line)}
+  .card .cap b{color:var(--blue);font-variant-numeric:tabular-nums;margin-right:6px}
+  .card .cap span{color:var(--sub)}
+  .card.on{border-color:var(--blue)}
+  kbd{background:#f1f3f7;border:1px solid #e2e6ee;border-bottom-width:2px;border-radius:5px;padding:1px 5px;font-size:11px;font-family:inherit}
+  @media (max-width:1000px){aside{width:220px}input[type=search]{width:140px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Doc to UI Generator <em>· 可交互原型</em></div>
+  <div class="stats">
+    <span id="cov">— / 70 页已生成</span>
+    <span class="bar"><i id="bar"></i></span>
+    <span>Stitch 项目：<b id="stitchN">0</b> 张界面</span>
+  </div>
+  <div class="grow"></div>
+  <input type="search" id="q" placeholder="搜索 P 编号 / 页面名 / 路由"/>
+  <button class="btn" id="toggle">全景网格</button>
+  <a class="link" href="https://stitch.withgoogle.com/projects/14780646619558325757" target="_blank">打开 Stitch 项目 ↗</a>
+</header>
+
+<main>
+  <aside id="list"></aside>
+
+  <section class="stage">
+    <div class="toolbar">
+      <div class="nav">
+        <button id="prev" title="上一页">‹</button>
+        <button id="next" title="下一页">›</button>
+      </div>
+      <span class="cur"><span id="idx">1</span> / 70　<small id="ttl"></small></span>
+      <span class="grow"></span>
+      <span class="nav-info" style="font-size:12px;color:var(--mute)">底栏「首页/预订/行程/文旅/我的」可直接点击跳转 · <kbd>←</kbd> <kbd>→</kbd> 翻页</span>
+      <button class="btn" id="reload" title="重新加载当前界面">重载</button>
+    </div>
+
+    <div class="canvas">
+      <div class="device" id="device"><iframe id="frame" title="screen"></iframe>
+        <div class="placeholder" id="ph" style="display:none"></div>
+      </div>
+      <div class="hint" id="hint"></div>
+    </div>
+
+    <div class="grid" id="grid"></div>
+
+    <div class="meta">
+      <div class="row">
+        <span class="tag">路由 <b id="mroute">—</b></span>
+        <span class="tag">分期 <b id="mphase">—</b></span>
+        <span class="tag">角色 <b id="mrole">—</b></span>
+        <span class="tag">类型 <b id="mtype">—</b></span>
+        <span class="tag">优先级 <b id="mpri">—</b></span>
+        <span class="tag" id="mgroup">—</span>
+        <span class="tag" id="mstatus">—</span>
+      </div>
+      <details id="dp" open><summary>Stitch 生成提示词 / 规划文档 Prompt</summary><pre id="mprompt">—</pre></details>
+    </div>
+  </section>
+</main>
+
+<script>
+let DATA=[], cur=0, gridMode=false;
+
+const $=id=>document.getElementById(id);
+const pad=n=>'P-'+String(n).padStart(2,'0');
+const esc=s=>(s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+
+function listRender(filter=''){
+  const f=filter.trim().toLowerCase();
+  const groups=[];
+  DATA.forEach((p,i)=>{
+    const hay=(p.id+' '+p.name+' '+p.route+' '+(p.stitchTitle||'')).toLowerCase();
+    if(f && hay.indexOf(f)<0) return;
+    if(!groups.length || groups[groups.length-1].name!==p.group) groups.push({name:p.group, items:[]});
+    groups[groups.length-1].items.push({p,i});
+  });
+  $('list').innerHTML = groups.map(g=>
+    `<div class="grp">${esc(g.name)}</div>`+g.items.map(({p,i})=>
+      `<div class="item ${p.has?'':'no'} ${i===cur?'on':''}" data-i="${i}">
+         <span class="dot"></span>
+         <span class="pid">${p.id}</span>
+         <span class="nm">${esc(p.name)}</span>
+       </div>`).join('')
+  ).join('') || '<div class="grp">无匹配结果</div>';
+}
+
+function metaRender(p){
+  $('mroute').textContent=p.route;
+  $('mphase').textContent=p.phase; $('mrole').textContent=p.role;
+  $('mtype').textContent=p.type; $('mpri').textContent=p.priority;
+  $('mgroup').textContent=p.group;
+  $('mstatus').innerHTML = p.has
+    ? '<b style="color:#12A150">已生成 · '+esc(p.stitchTitle||'')+'</b>'
+    : '<b style="color:#E5484D">Stitch 未生成</b>';
+  const pr = p.stitchPrompt || p.docPrompt || '（暂无 Prompt）';
+  $('mprompt').textContent = (p.stitchPrompt?'【Stitch 项目中实际使用的 Prompt】\n':'【规划文档 Part 5 Prompt（尚未生成）】\n') + pr;
+}
+
+function placeholderRender(p){
+  $('ph').style.display='flex';
+  $('ph').innerHTML =
+    `<div class="ph-t">${p.id}　${esc(p.name)}</div>
+     <span class="badge">Stitch 画布上尚未生成此页</span>
+     <div class="ph-r">${esc(p.route)}</div>
+     <div style="font-size:12px;color:#5A6273;max-width:300px">可复制下方规划文档 Prompt 到 Stitch 生成该页后，再补入本原型。</div>
+     <pre>${esc((p.docPrompt||'').slice(0,1400))}</pre>`;
+  $('frame').style.visibility='hidden';
+}
+
+function inject(frame){
+  try{
+    const w=frame.contentWindow, d=frame.contentDocument;
+    if(!d||!d.body) return;
+    const TAB={'首页':'P-08','预订':'P-11','行程':'P-28','文旅':'P-42','我的':'P-58'};
+    const PATH={index:'P-08',home:'P-08','travel-hub':'P-08',booking:'P-11','corporate-booking':'P-11',
+      order:'P-28',trip:'P-28',itinerary:'P-28','trip-records':'P-28','p-28-itinerary-orders':'P-28','itinerary-schedule':'P-28',
+      culture:'P-42','cultural-tourism':'P-42','cultural-tourism-home':'P-42',
+      user:'P-58',profile:'P-58','user-profile':'P-58','enterprise-profile':'P-58','enterprise-user-center':'P-58'};
+    d.addEventListener('click', e=>{
+      const a=e.target && e.target.closest ? e.target.closest('a') : null;
+      if(!a) return;
+      let to=null;
+      const path=(a.getAttribute('data-path')||'').toLowerCase();
+      if(path && PATH[path]) to=PATH[path];
+      if(!to){
+        const txt=(a.innerText||a.textContent||'').replace(/\s+/g,'');
+        for(const k in TAB){ if(txt.indexOf(k)>=0){ to=TAB[k]; break; } }
+      }
+      if(to && to!==curId()){ e.preventDefault(); parent.postMessage({goto:to},'*'); }
+    }, true);
+    d.documentElement.setAttribute('data-prototype','injected');
+  }catch(err){ /* ignore */ }
+}
+
+const curId=()=>DATA[cur].id;
+
+function show(i, push=true){
+  if(i<0) i=0; if(i>DATA.length-1) i=DATA.length-1;
+  cur=i;
+  const p=DATA[i];
+  $('idx').textContent=i+1;
+  $('ttl').textContent=p.id+' · '+p.name+(p.has?'':'（未生成）');
+  metaRender(p);
+  if(p.has){
+    $('ph').style.display='none';
+    $('frame').style.visibility='visible';
+    const f=$('frame');
+    if(f.getAttribute('src')!==p.file){ f.src=p.file; }
+    $('hint').textContent = '当前界面由 Stitch 生成 · 点击界面内底栏可跳转到对应 Tab 页';
+  }else{
+    placeholderRender(p);
+  }
+  listRender($('q').value);
+  document.querySelectorAll('.card').forEach(c=>c.classList.toggle('on', +c.dataset.i===i));
+  if(push) history.replaceState(null,'','#'+p.id);
+  const on=document.querySelector('.item.on');
+  if(on && !gridMode) on.scrollIntoView({block:'nearest'});
+}
+
+function gridRender(){
+  $('grid').innerHTML = DATA.map((p,i)=>
+    `<div class="card ${i===cur?'on':''}" data-i="${i}">
+       ${p.has?`<div class="pv"><iframe loading="lazy" src="${p.file}"></iframe></div>`
+              :`<div class="ph"><span class="badge">未生成</span><span>${esc(p.route)}</span></div>`}
+       <div class="cap"><b>${p.id}</b><span>${esc(p.name)}</span></div>
+     </div>`).join('');
+}
+
+/* events */
+$('list').addEventListener('click', e=>{
+  const it=e.target.closest('.item'); if(it) show(+it.dataset.i);
+});
+$('grid').addEventListener('click', e=>{
+  const c=e.target.closest('.card'); if(c){ toggleGrid(false); show(+c.dataset.i); }
+});
+$('prev').onclick=()=>show(cur-1);
+$('next').onclick=()=>show(cur+1);
+$('reload').onclick=()=>{ const f=$('frame'); if(DATA[cur].has){ const s=DATA[cur].file; f.removeAttribute('src'); setTimeout(()=>f.src=s,10);} };
+$('q').addEventListener('input', e=>listRender(e.target.value));
+function toggleGrid(force){
+  gridMode = force===undefined ? !gridMode : force;
+  document.body.classList.toggle('grid-mode', gridMode);
+  $('toggle').textContent = gridMode?'返回单页':'全景网格';
+  $('toggle').classList.toggle('on', gridMode);
+  if(gridMode) gridRender(); else show(cur,false);
+}
+$('toggle').onclick=()=>toggleGrid();
+document.addEventListener('keydown', e=>{
+  if(e.target.tagName==='INPUT') return;
+  if(e.key==='ArrowRight'){ e.preventDefault(); show(cur+1); }
+  if(e.key==='ArrowLeft'){ e.preventDefault(); show(cur-1); }
+  if(e.key==='g'||e.key==='G') toggleGrid();
+});
+window.addEventListener('message', e=>{
+  if(e.data && e.data.goto){
+    const i=DATA.findIndex(p=>p.id===e.data.goto);
+    if(i>=0 && !gridMode) show(i);
+  }
+});
+$('frame').addEventListener('load', ()=>inject($('frame')));
+function fit(){
+  const c=document.querySelector('.canvas');
+  const s=Math.min((c.clientHeight-40)/812, (c.clientWidth-40)/375, 1);
+  $('device').style.transform='scale('+s.toFixed(3)+')';
+  $('device').style.margin = ((812*s-812)/2)+'px '+((375*s-375)/2)+'px';
+}
+window.addEventListener('resize', fit);
+
+/* boot */
+fetch('data.json').then(r=>r.json()).then(d=>{
+  DATA=d;
+  const has=d.filter(p=>p.has).length;
+  $('cov').textContent=has+' / '+d.length+' 页已生成';
+  $('bar').style.width=(has/d.length*100)+'%';
+  $('stitchN').textContent=has;
+  listRender();
+  const h=(location.hash||'').replace('#','').toUpperCase();
+  const i=d.findIndex(p=>p.id===h);
+  show(i>=0?i:0,false);
+  fit();
+}).catch(err=>{
+  document.querySelector('.canvas').innerHTML='<div style="color:#E5484D;font-size:13px">data.json 加载失败，请用本地 HTTP 服务打开本目录（例如 <code>python3 -m http.server</code>）。<br>'+esc(String(err))+'</div>';
+});
+</script>
+</body>
+</html>

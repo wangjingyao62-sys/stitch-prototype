@@ -1,0 +1,7 @@
+# 中间产物：抓取过程的原始数据，不上传仓库
+screens.json
+screens.json.gz
+index.json
+meta.json
+new.json
+screens_merged.json
